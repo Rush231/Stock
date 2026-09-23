@@ -1,0 +1,6 @@
+{
+  "name": "OmniStock Nexus - SaaS de Control de Stock & Retail Inteligente",
+  "description": "Plataforma SaaS integral de gestión de stock, sincronización ecommerce en tiempo real, trazabilidad por lotes, lector de código de barras, integración con proveedores locales, seguridad 2FA y análisis de rendimiento por punto de venta.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
