@@ -2,17 +2,10 @@ import React from 'react';
 import { 
   TrendingUp, 
   AlertTriangle, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   Boxes, 
   DollarSign, 
-  Truck, 
   ShoppingCart, 
-  Scan, 
-  Store, 
   Clock, 
-  CheckCircle2, 
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 import { Product, StockMovement, RestockAlert } from '../types/inventory';
@@ -30,9 +23,7 @@ interface DashboardViewProps {
   branches: Branch[];
   salesTrends: SalesTrendDataPoint[];
   selectedBranchId: string;
-  onOpenScanner: () => void;
   onOpenNewPO: (preselectedProductId?: string) => void;
-  onOpenNewTransfer: () => void;
   onNavigateTab: (tab: string) => void;
 }
 
@@ -46,9 +37,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   branches,
   salesTrends,
   selectedBranchId,
-  onOpenScanner,
   onOpenNewPO,
-  onOpenNewTransfer,
   onNavigateTab,
 }) => {
   const currentBranch = branches.find((b) => b.id === selectedBranchId);
@@ -74,7 +63,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="space-y-6">
       
       {/* Top Banner / Context */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 sm:p-5 rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800 p-4 sm:p-5 rounded-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-white">
@@ -89,30 +78,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
 
-        {/* Action Bar */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={onOpenScanner}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm shadow-emerald-950/40 transition-colors"
-          >
-            <Scan className="w-4 h-4" />
-            <span>Escanear Código</span>
-          </button>
-          <button
-            onClick={onOpenNewTransfer}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg transition-colors"
-          >
-            <Truck className="w-4 h-4 text-cyan-400" />
-            <span>Nuevo Remito / Traslado</span>
-          </button>
-          <button
-            onClick={() => onOpenNewPO()}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg transition-colors"
-          >
-            <Store className="w-4 h-4 text-amber-400" />
-            <span>Orden a Proveedor Local</span>
-          </button>
-        </div>
+        <span className="text-[11px] text-slate-500">Última actualización: ahora</span>
       </div>
 
       {/* KPI Cards Grid */}

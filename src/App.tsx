@@ -454,7 +454,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 lg:py-6">
         
         {activeTab === 'dashboard' && (
           <DashboardView
@@ -467,12 +467,10 @@ export default function App() {
             branches={branches}
             salesTrends={salesTrends}
             selectedBranchId={selectedBranchId}
-            onOpenScanner={() => setIsScannerOpen(true)}
             onOpenNewPO={(preselected) => {
               setPreselectedPOProductId(preselected);
               setIsNewPOOpen(true);
             }}
-            onOpenNewTransfer={() => setIsNewTransferOpen(true)}
             onNavigateTab={setActiveTab}
           />
         )}

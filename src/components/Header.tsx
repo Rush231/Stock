@@ -57,6 +57,8 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'branches', label: 'Sucursales & Traslados' },
     { id: 'pos_reports', label: 'Rendimiento POS' },
   ];
+  const primaryNavItems = navItems.slice(0, 2);
+  const secondaryNavItems = navItems.slice(2);
 
   return (
     <header className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
@@ -79,8 +81,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Zone 2: Navigation Links (single line, subtle hover) */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-            {navItems.map((item) => {
+          <nav className="hidden lg:flex items-center gap-1">
+            {primaryNavItems.map((item) => {
               const isActive = currentTab === item.id;
               return (
                 <button
@@ -101,6 +103,17 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               );
             })}
+            <select
+              aria-label="Más secciones"
+              value={secondaryNavItems.some((item) => item.id === currentTab) ? currentTab : ''}
+              onChange={(event) => event.target.value && onTabChange(event.target.value)}
+              className="px-2.5 py-1.5 bg-transparent text-xs font-medium text-slate-400 border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 hover:text-slate-200 cursor-pointer"
+            >
+              <option value="" disabled>Más secciones</option>
+              {secondaryNavItems.map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </select>
           </nav>
 
           {/* Zone 3: Primary Actions & Branch Selector & Security */}
@@ -176,8 +189,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile secondary tab strip */}
-        <div className="flex lg:hidden overflow-x-auto py-2 gap-1 border-t border-slate-800/80 no-scrollbar">
-          {navItems.map((item) => {
+        <div className="flex lg:hidden items-center overflow-x-auto py-2 gap-1 border-t border-slate-800/80 no-scrollbar">
+          {primaryNavItems.map((item) => {
             const isActive = currentTab === item.id;
             return (
               <button
@@ -193,6 +206,17 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             );
           })}
+          <select
+            aria-label="Más secciones"
+            value={secondaryNavItems.some((item) => item.id === currentTab) ? currentTab : ''}
+            onChange={(event) => event.target.value && onTabChange(event.target.value)}
+            className="shrink-0 px-2.5 py-1 bg-transparent text-xs font-medium text-slate-400 border-0 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          >
+            <option value="" disabled>Más</option>
+            {secondaryNavItems.map((item) => (
+              <option key={item.id} value={item.id}>{item.label}</option>
+            ))}
+          </select>
         </div>
 
       </div>
