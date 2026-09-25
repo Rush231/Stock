@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Scan, 
   ShieldCheck, 
@@ -9,7 +9,8 @@ import {
   Bell, 
   RefreshCw,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  MoreHorizontal
 } from 'lucide-react';
 import { Branch } from '../types/branches';
 import { UserSession } from '../types/auth';
@@ -48,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   onLogout,
 }) => {
+  const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const currentBranch = branches.find((b) => b.id === selectedBranchId);
 
   const navItems = [
@@ -128,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-label="Seleccionar sucursal"
                 value={selectedBranchId}
                 onChange={(e) => onSelectBranch(e.target.value)}
-                className="pl-8 pr-7 py-1.5 bg-slate-900 border border-slate-700/80 rounded-lg text-xs font-medium text-slate-200 focus:outline-none focus:border-emerald-500 appearance-none cursor-pointer hover:border-slate-600 transition-colors max-w-[140px] sm:max-w-[180px] truncate"
+                className="pl-8 pr-7 py-1.5 bg-slate-900 border border-slate-700/80 rounded-lg text-xs font-medium text-slate-200 focus:outline-none focus:border-emerald-500 appearance-none cursor-pointer hover:border-slate-600 transition-colors max-w-35 sm:max-w-45 truncate"
               >
                 <option value="ALL">Todas las Sucursales (Red)</option>
                 {branches.map((b) => (
@@ -150,26 +152,35 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">Lector Barcode</span>
             </button>
 
-            {/* Quick Ecommerce Sync Button */}
-            <button
-              onClick={onQuickSync}
-              disabled={isSyncing}
-              title="Sincronizar Stock con Ecommerce en Tiempo Real"
-              className={`p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-colors ${
-                isSyncing ? 'animate-spin text-emerald-400' : ''
-              }`}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-
-            {/* Sound Mute/Unmute */}
-            <button
-              onClick={onToggleSound}
-              title={soundEnabled ? 'Sonido de escáner activado' : 'Sonido desactivado'}
-              className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors"
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-600" />}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setIsQuickMenuOpen((isOpen) => !isOpen)}
+                aria-label="Más acciones"
+                aria-expanded={isQuickMenuOpen}
+                className="min-h-11 min-w-11 rounded-lg border border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200 transition-colors flex items-center justify-center"
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+              {isQuickMenuOpen && (
+                <div className="absolute right-0 top-14 z-40 w-56 rounded-lg border border-slate-700 bg-slate-900 p-1.5 shadow-xl">
+                  <button
+                    onClick={() => { onQuickSync(); setIsQuickMenuOpen(false); }}
+                    disabled={isSyncing}
+                    className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-emerald-300 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    Sincronizar ecommerce
+                  </button>
+                  <button
+                    onClick={() => { onToggleSound(); setIsQuickMenuOpen(false); }}
+                    className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                  >
+                    {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    Sonido {soundEnabled ? 'activado' : 'desactivado'}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Security & 2FA / Tenant Status */}
             <button
@@ -190,7 +201,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onLogout}
               title="Cerrar sesión"
-              className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:border-red-500/40 hover:text-red-300 transition-colors"
+              className="min-h-11 min-w-11 rounded-lg border border-slate-800 text-slate-400 hover:border-red-500/40 hover:text-red-300 transition-colors flex items-center justify-center"
             >
               <LogOut className="w-4 h-4" />
             </button>

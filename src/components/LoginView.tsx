@@ -100,7 +100,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onAuthenticated }) => {
               <span className="text-xs font-semibold text-slate-300">Contraseña</span>
               <input
                 type="password"
-                autoComplete="current-password"
+                autoComplete={isRegistering ? 'new-password' : 'current-password'}
+                minLength={isRegistering ? 12 : undefined}
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}

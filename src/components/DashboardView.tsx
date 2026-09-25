@@ -139,9 +139,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* KPI 4: Replenishment Alerts */}
-        <div 
+        <button
+          type="button"
           onClick={() => onNavigateTab('suppliers')}
-          className="bg-slate-900 border border-slate-800 hover:border-amber-500/50 p-4 rounded-xl space-y-2 cursor-pointer transition-colors group"
+          className="w-full text-left bg-slate-900 border border-slate-800 hover:border-amber-500/50 p-4 rounded-xl space-y-2 cursor-pointer transition-colors group"
         >
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-medium">Alertas de Reabastecimiento</span>
@@ -159,7 +160,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ArrowRight className="w-3 h-3 ml-auto" />
             </div>
           </div>
-        </div>
+        </button>
 
       </div>
 
@@ -405,13 +406,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {isPositive ? `+${m.quantity}` : m.quantity} u.
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-sans text-slate-300 truncate max-w-[160px]">
+                    <td className="py-3 px-4 font-sans text-slate-300 truncate max-w-40">
                       {m.branchName}
                     </td>
                     <td className="py-3 px-4 text-slate-400 text-[11px] truncate">
                       {m.lotNumber ? <span className="text-emerald-400">{m.lotNumber}</span> : m.referenceId || '—'}
                     </td>
-                    <td className="py-3 pl-4 font-sans text-slate-400 truncate max-w-[120px]">
+                    <td className="py-3 pl-4 font-sans text-slate-400 truncate max-w-30">
                       {m.performedBy}
                     </td>
                   </tr>
