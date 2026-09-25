@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StorageService } from './services/storageService';
 import { soundService } from './services/audioService';
+import { AuthService } from './services/authService';
 
 import { Product, ProductLot, StockMovement, RestockAlert } from './types/inventory';
 import { Branch, InterBranchTransfer } from './types/branches';
@@ -23,6 +24,7 @@ import { PurchaseOrderModal } from './components/PurchaseOrderModal';
 import { TransferStockModal } from './components/TransferStockModal';
 import { ProductFormModal } from './components/ProductFormModal';
 import { QuickAdjustModal } from './components/QuickAdjustModal';
+import { LoginView } from './components/LoginView';
 
 export default function App() {
   // Domain State from StorageService
@@ -37,6 +39,8 @@ export default function App() {
   const [movements, setMovements] = useState<StockMovement[]>(() => StorageService.getMovements());
   const [user, setUser] = useState<UserSession>(() => StorageService.getUserSession());
   const [auditLogs, setAuditLogs] = useState<SecurityAuditLog[]>(() => StorageService.getSecurityAuditLogs());
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Navigation & Filtering
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -63,6 +67,26 @@ export default function App() {
   const salesTrends = StorageService.getSalesTrends();
   const posMetrics = StorageService.getPOSMetrics();
 
+  useEffect(() => {
+    AuthService.getCurrentUser().then((authenticatedUser) => {
+      if (authenticatedUser) {
+        setUser((currentUser) => ({
+          ...currentUser,
+          id: authenticatedUser.sub,
+          name: authenticatedUser.name,
+          email: authenticatedUser.email,
+          role: authenticatedUser.role as UserSession['role'],
+          organizationId: authenticatedUser.org,
+          organizationName: authenticatedUser.organization_name,
+          token: '',
+          twoFactorEnabled: authenticatedUser.two_factor_enabled,
+        }));
+        setIsAuthenticated(true);
+      }
+      setIsCheckingSession(false);
+    }).catch(() => setIsCheckingSession(false));
+  }, []);
+
   // Keep state synced with localStorage
   useEffect(() => {
     StorageService.saveProducts(products);
@@ -79,6 +103,10 @@ export default function App() {
   useEffect(() => {
     StorageService.savePurchaseOrders(purchaseOrders);
   }, [purchaseOrders]);
+
+  useEffect(() => {
+    StorageService.saveSuppliers(suppliers);
+  }, [suppliers]);
 
   useEffect(() => {
     StorageService.saveEcommerceIntegrations(ecommerce);
@@ -103,6 +131,28 @@ export default function App() {
   const handleToggleSound = () => {
     const newState = soundService.toggle();
     setSoundEnabled(newState);
+  };
+
+  const handleAuthenticated = async () => {
+    const authenticatedUser = await AuthService.getCurrentUser();
+    if (!authenticatedUser) return;
+    setUser((currentUser) => ({
+      ...currentUser,
+      id: authenticatedUser.sub,
+      name: authenticatedUser.name,
+      email: authenticatedUser.email,
+      role: authenticatedUser.role as UserSession['role'],
+      organizationId: authenticatedUser.org,
+      organizationName: authenticatedUser.organization_name,
+      token: '',
+      twoFactorEnabled: authenticatedUser.two_factor_enabled,
+    }));
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = async () => {
+    await AuthService.logout();
+    setIsAuthenticated(false);
   };
 
   // Log Security Action Helper
@@ -433,6 +483,14 @@ export default function App() {
     soundService.playSuccessChime();
   };
 
+  if (isCheckingSession) {
+    return <div className="min-h-screen bg-slate-950" aria-label="Comprobando sesión" />;
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView onAuthenticated={handleAuthenticated} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       
@@ -451,6 +509,7 @@ export default function App() {
         onQuickSync={handleTriggerFullSync}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -524,6 +583,11 @@ export default function App() {
             }}
             onUpdatePOStatus={handleUpdatePOStatus}
             onReceivePO={handleReceivePO}
+            onUpdateSupplier={(supplierId, updates) => {
+              setSuppliers((currentSuppliers) => currentSuppliers.map((supplier) =>
+                supplier.id === supplierId ? { ...supplier, ...updates } : supplier
+              ));
+            }}
           />
         )}
 

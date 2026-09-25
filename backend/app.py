@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 
 from .config import MAX_REQUEST_BYTES
+from flask_talisman import Talisman
 from .db import initialize_database
 from .routes.api import api_blueprint
 
@@ -8,6 +9,7 @@ from .routes.api import api_blueprint
 def create_app() -> Flask:
     application = Flask(__name__)
     application.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
+    Talisman(application, force_https=False, content_security_policy={"default-src": ["'self'"]})
     initialize_database()
     application.register_blueprint(api_blueprint)
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   ShieldCheck, 
@@ -6,8 +6,6 @@ import {
   Key, 
   Lock, 
   Smartphone, 
-  Copy, 
-  Check, 
   AlertTriangle, 
   RefreshCw, 
   Fingerprint, 
@@ -45,37 +43,23 @@ export const SecurityAnd2FAModal: React.FC<SecurityAnd2FAModalProps> = ({
   const [totpInput, setTotpInput] = useState<string>('');
   const [totpError, setTotpError] = useState<string | null>(null);
   const [totpSuccess, setTotpSuccess] = useState<string | null>(null);
-  const [currentTotpCode, setCurrentTotpCode] = useState<string>('');
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(30);
-  const [copiedKey, setCopiedKey] = useState<boolean>(false);
+  const [setupSecret, setSetupSecret] = useState<string | null>(null);
   const [simulatedBreachResult, setSimulatedBreachResult] = useState<string | null>(null);
-
-  // Generate live TOTP preview every 30 seconds
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const updateCode = () => {
-      const secret = user.twoFactorSecret || 'JBSWY3DPEHPK3PXP';
-      const code = AuthService.generateTOTP(secret);
-      setCurrentTotpCode(code);
-      const sec = 30 - (Math.floor(Date.now() / 1000) % 30);
-      setSecondsRemaining(sec);
-    };
-
-    updateCode();
-    const timer = setInterval(updateCode, 1000);
-    return () => clearInterval(timer);
-  }, [isOpen, user.twoFactorSecret]);
 
   if (!isOpen) return null;
 
-  const handleVerifyAndEnable2FA = (e: React.FormEvent) => {
+  const handleSetupTwoFactor = async () => {
+    const secret = await AuthService.setupTwoFactor();
+    setSetupSecret(secret);
+    if (!secret) setTotpError('No se pudo preparar la configuración 2FA.');
+  };
+
+  const handleVerifyAndEnable2FA = async (e: React.FormEvent) => {
     e.preventDefault();
     setTotpError(null);
     setTotpSuccess(null);
 
-    const secret = user.twoFactorSecret || 'JBSWY3DPEHPK3PXP';
-    const isValid = AuthService.verifyTOTP(totpInput, secret);
+    const isValid = await AuthService.enableTwoFactor(totpInput);
 
     if (isValid) {
       soundService.playSuccessChime();
@@ -102,11 +86,10 @@ export const SecurityAnd2FAModal: React.FC<SecurityAnd2FAModalProps> = ({
     }
   };
 
-  const handleDisable2FA = () => {
-    const updated: UserSession = {
-      ...user,
-      twoFactorEnabled: false,
-    };
+  const handleDisable2FA = async () => {
+    const disabled = await AuthService.disableTwoFactor();
+    if (!disabled) return;
+    const updated: UserSession = { ...user, twoFactorEnabled: false, token: '' };
     onUpdateUser(updated);
     onLogSecurityAction(
       'SETTINGS_CHANGED',
@@ -115,26 +98,21 @@ export const SecurityAnd2FAModal: React.FC<SecurityAnd2FAModalProps> = ({
     );
   };
 
-  const handleCopySecret = () => {
-    navigator.clipboard.writeText(user.twoFactorSecret || 'JBSWY3DPEHPK3PXP');
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
-  };
-
   const handleSimulateCrossTenantBreach = () => {
-    // Attempt to access with a foreign tenant token
-    const foreignTenantToken = AuthService.createSecureToken('malicious_actor', 'org-foreign-comp-999');
-    const validation = AuthService.validateTokenForTenant(foreignTenantToken, user.organizationId);
-
-    if (!validation.valid) {
+    fetch('/api/products', {
+      credentials: 'include',
+      headers: { Authorization: 'Bearer forged-cross-tenant-token' },
+    }).then((response) => {
+      if (!response.ok) {
       soundService.playAlertBuzz();
-      setSimulatedBreachResult(`ACCESO DENEGADO (403): ${validation.reason}`);
+      setSimulatedBreachResult(`ACCESO DENEGADO (${response.status}): el servidor rechazó el token adulterado.`);
       onLogSecurityAction(
         'UNAUTHORIZED_CROSS_TENANT_BLOCKED',
         `Intento de infiltración entre tenants bloqueado: token perteneciente a org-foreign-comp-999 intentó acceder al espacio de datos privado de ${user.organizationName}.`,
         'CRITICAL'
       );
-    }
+      }
+    });
   };
 
   const handleSwitchRole = (newRole: UserRole) => {
@@ -294,32 +272,21 @@ export const SecurityAnd2FAModal: React.FC<SecurityAnd2FAModalProps> = ({
                       Clave Secreta Manual (Base32):
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={user.twoFactorSecret || 'JBSWY3DPEHPK3PXP'}
-                        className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400 text-xs tracking-wider"
-                      />
-                      <button
-                        onClick={handleCopySecret}
-                        className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300"
-                        title="Copiar clave"
-                      >
-                        {copiedKey ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
+                      <div className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-500 text-xs tracking-wider">
+                        {setupSecret || 'Pulsa “Configurar 2FA” para generar una clave'}
+                      </div>
+                      {!user.twoFactorEnabled && (
+                        <button type="button" onClick={handleSetupTwoFactor} className="shrink-0 rounded border border-slate-700 px-2 py-1 text-[10px] text-emerald-300 hover:bg-slate-800">Configurar 2FA</button>
+                      )}
                     </div>
 
                     {/* Live code rotation preview */}
                     <div className="p-2.5 bg-slate-900/80 border border-slate-800 rounded-lg flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <span className="text-[10px] text-slate-500 block uppercase font-mono">Código Actual de Prueba</span>
-                        <span className="font-mono text-base font-bold text-white tracking-widest">
-                          {currentTotpCode}
-                        </span>
+                        <span className="text-[10px] text-slate-500 block uppercase font-mono">Código actual</span>
+                        <span className="text-[11px] text-slate-300">Generado por tu app autenticadora</span>
                       </div>
-                      <div className="text-right font-mono text-[11px] text-emerald-400">
-                        Renueva en {secondsRemaining}s
-                      </div>
+                      <Smartphone className="w-4 h-4 text-emerald-400" />
                     </div>
                   </div>
 
@@ -368,7 +335,7 @@ export const SecurityAnd2FAModal: React.FC<SecurityAnd2FAModalProps> = ({
                 </p>
 
                 <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 break-all select-all">
-                  {user.token}
+                  Cookie HttpOnly activa. El token no se expone al navegador ni se guarda en localStorage.
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-[11px] font-mono">

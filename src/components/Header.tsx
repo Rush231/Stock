@@ -29,6 +29,7 @@ interface HeaderProps {
   onQuickSync: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -45,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
   onQuickSync,
   soundEnabled,
   onToggleSound,
+  onLogout,
 }) => {
   const currentBranch = branches.find((b) => b.id === selectedBranchId);
 
@@ -183,6 +185,14 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden md:inline font-mono text-[11px] text-slate-400">
                 2FA {user.twoFactorEnabled ? 'ON' : 'OFF'}
               </span>
+            </button>
+
+            <button
+              onClick={onLogout}
+              title="Cerrar sesión"
+              className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:border-red-500/40 hover:text-red-300 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
 
           </div>

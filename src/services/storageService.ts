@@ -489,11 +489,11 @@ export class StorageServiceClass {
   }
 
   public getUserSession(): UserSession {
-    return this.getUser();
+    return { ...this.getUser(), token: '' };
   }
 
   public saveUserSession(user: UserSession): void {
-    this.saveUser(user);
+    this.saveUser({ ...user, token: '' });
   }
 
   public getSecurityAuditLogs(): SecurityAuditLog[] {

@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .config import ADMIN_EMAIL, ADMIN_PASSWORD, DATABASE_PATH
+from .config import ADMIN_EMAIL, ADMIN_ORGANIZATION_ID, ADMIN_PASSWORD, ADMIN_TWO_FACTOR_SECRET, DATABASE_PATH
 
 
 def get_connection() -> sqlite3.Connection:
@@ -35,6 +35,12 @@ def row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     return dict(row)
 
 
+def _add_column_if_missing(connection: sqlite3.Connection, table_name: str, column_name: str, column_definition: str) -> None:
+    columns = {row["name"] for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()}
+    if column_name not in columns:
+        connection.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
+
+
 def initialize_database() -> None:
     with get_connection() as connection:
         connection.executescript(
@@ -43,13 +49,18 @@ def initialize_database() -> None:
                 id TEXT PRIMARY KEY,
                 email TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
+                organization_id TEXT NOT NULL,
+                organization_name TEXT NOT NULL DEFAULT '',
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'OPERATOR',
+                two_factor_enabled INTEGER NOT NULL DEFAULT 0,
+                two_factor_secret TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS products (
                 id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
                 sku TEXT NOT NULL UNIQUE,
                 barcode TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
@@ -72,6 +83,7 @@ def initialize_database() -> None:
 
             CREATE TABLE IF NOT EXISTS branches (
                 id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
                 code TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
                 type TEXT NOT NULL,
@@ -87,6 +99,7 @@ def initialize_database() -> None:
 
             CREATE TABLE IF NOT EXISTS stock_movements (
                 id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
                 product_id TEXT NOT NULL,
                 product_name TEXT NOT NULL,
@@ -100,9 +113,19 @@ def initialize_database() -> None:
             );
             """
         )
+        _add_column_if_missing(connection, "users", "organization_id", "TEXT")
+        _add_column_if_missing(connection, "users", "organization_name", "TEXT NOT NULL DEFAULT ''")
+        _add_column_if_missing(connection, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0")
+        _add_column_if_missing(connection, "users", "two_factor_secret", "TEXT")
+        _add_column_if_missing(connection, "products", "organization_id", "TEXT")
+        _add_column_if_missing(connection, "branches", "organization_id", "TEXT")
+        _add_column_if_missing(connection, "stock_movements", "organization_id", "TEXT")
+        if ADMIN_ORGANIZATION_ID:
+            for table_name in ("users", "products", "branches", "stock_movements"):
+                connection.execute(f"UPDATE {table_name} SET organization_id = ? WHERE organization_id IS NULL OR organization_id = ''", (ADMIN_ORGANIZATION_ID,))
         existing_user = connection.execute("SELECT 1 FROM users LIMIT 1").fetchone()
-        if existing_user is None and ADMIN_EMAIL and ADMIN_PASSWORD:
+        if existing_user is None and ADMIN_EMAIL and ADMIN_PASSWORD and ADMIN_ORGANIZATION_ID:
             connection.execute(
-                "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-                ("user-admin", ADMIN_EMAIL.lower(), "Administrador", hash_password(ADMIN_PASSWORD), "ADMIN"),
+                "INSERT INTO users (id, email, name, organization_id, organization_name, password_hash, role, two_factor_enabled, two_factor_secret) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ("user-admin", ADMIN_EMAIL.lower(), "Administrador", ADMIN_ORGANIZATION_ID, ADMIN_ORGANIZATION_ID, hash_password(ADMIN_PASSWORD), "ADMIN", int(bool(ADMIN_TWO_FACTOR_SECRET)), ADMIN_TWO_FACTOR_SECRET),
             )

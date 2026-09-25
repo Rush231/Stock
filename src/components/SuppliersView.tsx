@@ -14,7 +14,10 @@ import {
   ArrowRight,
   PackageCheck,
   Building2,
-  ExternalLink
+  ExternalLink,
+  Edit3,
+  Save,
+  X
 } from 'lucide-react';
 import { LocalSupplier, PurchaseOrder } from '../types/suppliers';
 import { Product, RestockAlert } from '../types/inventory';
@@ -31,6 +34,7 @@ interface SuppliersViewProps {
   onOpenCreatePO: (preselectedProductId?: string) => void;
   onUpdatePOStatus: (poId: string, newStatus: PurchaseOrder['status']) => void;
   onReceivePO: (po: PurchaseOrder) => void;
+  onUpdateSupplier: (supplierId: string, updates: Pick<LocalSupplier, 'contactName' | 'phone' | 'email'>) => void;
 }
 
 export const SuppliersView: React.FC<SuppliersViewProps> = ({
@@ -42,8 +46,11 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({
   onOpenCreatePO,
   onUpdatePOStatus,
   onReceivePO,
+  onUpdateSupplier,
 }) => {
   const [activeTab, setActiveTab] = useState<'POS' | 'SUPPLIERS' | 'SUGGESTIONS'>('POS');
+  const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
+  const [contactDraft, setContactDraft] = useState<Pick<LocalSupplier, 'contactName' | 'phone' | 'email'>>({ contactName: '', phone: '', email: '' });
 
   const handleReceiveClick = (po: PurchaseOrder) => {
     onReceivePO(po);
@@ -54,6 +61,21 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({
       origin: { y: 0.6 },
       colors: ['#10b981', '#f59e0b', '#3b82f6'],
     });
+  };
+
+  const handleStartEditing = (supplier: LocalSupplier) => {
+    setEditingSupplierId(supplier.id);
+    setContactDraft({ contactName: supplier.contactName, phone: supplier.phone, email: supplier.email });
+  };
+
+  const handleSaveContact = () => {
+    if (!editingSupplierId || !contactDraft.contactName.trim() || !contactDraft.phone.trim() || !contactDraft.email.trim()) return;
+    onUpdateSupplier(editingSupplierId, {
+      contactName: contactDraft.contactName.trim(),
+      phone: contactDraft.phone.trim(),
+      email: contactDraft.email.trim(),
+    });
+    setEditingSupplierId(null);
   };
 
   const handleSendWhatsApp = (po: PurchaseOrder) => {
@@ -346,15 +368,54 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({
                 </div>
               </div>
 
-              <div className="text-xs text-slate-400 flex items-center justify-between pt-1">
-                <span>Contacto: {s.contactName} ({s.phone})</span>
-                <button
-                  onClick={() => onOpenCreatePO()}
-                  className="text-amber-400 hover:text-amber-300 font-semibold"
-                >
-                  Crear O.C. →
-                </button>
-              </div>
+              {editingSupplierId === s.id ? (
+                <div className="space-y-2 rounded-lg border border-emerald-500/30 bg-slate-950/70 p-3">
+                  <p className="text-[11px] font-semibold text-emerald-300">Editar datos de contacto</p>
+                  <input
+                    aria-label="Nombre del contacto"
+                    value={contactDraft.contactName}
+                    onChange={(event) => setContactDraft({ ...contactDraft, contactName: event.target.value })}
+                    placeholder="Nombre del contacto"
+                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-400"
+                  />
+                  <input
+                    aria-label="Teléfono o WhatsApp"
+                    type="tel"
+                    value={contactDraft.phone}
+                    onChange={(event) => setContactDraft({ ...contactDraft, phone: event.target.value })}
+                    placeholder="Teléfono / WhatsApp"
+                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-400"
+                  />
+                  <input
+                    aria-label="Correo del proveedor"
+                    type="email"
+                    value={contactDraft.email}
+                    onChange={(event) => setContactDraft({ ...contactDraft, email: event.target.value })}
+                    placeholder="correo@proveedor.com"
+                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-400"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setEditingSupplierId(null)} className="flex items-center gap-1 rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800"><X className="h-3 w-3" />Cancelar</button>
+                    <button type="button" onClick={handleSaveContact} className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-500"><Save className="h-3 w-3" />Guardar</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 pt-1 text-xs text-slate-400">
+                  <div className="min-w-0">
+                    <p className="truncate">Contacto: {s.contactName}</p>
+                    <p className="truncate text-[11px] text-slate-500">{s.phone} · {s.email}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <button type="button" onClick={() => handleStartEditing(s)} className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold"><Edit3 className="h-3.5 w-3.5" />Editar</button>
+                    <button
+                      onClick={() => onOpenCreatePO()}
+                      className="text-amber-400 hover:text-amber-300 font-semibold"
+                    >
+                      Crear O.C. →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
