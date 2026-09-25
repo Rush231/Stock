@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .config import DATABASE_PATH
+from .config import ADMIN_EMAIL, ADMIN_PASSWORD, DATABASE_PATH
 
 
 def get_connection() -> sqlite3.Connection:
@@ -101,8 +101,8 @@ def initialize_database() -> None:
             """
         )
         existing_user = connection.execute("SELECT 1 FROM users LIMIT 1").fetchone()
-        if existing_user is None:
+        if existing_user is None and ADMIN_EMAIL and ADMIN_PASSWORD:
             connection.execute(
                 "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-                ("user-admin", "admin@omnistock.local", "Administrador", hash_password("admin123"), "ADMIN"),
+                ("user-admin", ADMIN_EMAIL.lower(), "Administrador", hash_password(ADMIN_PASSWORD), "ADMIN"),
             )

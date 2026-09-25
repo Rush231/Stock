@@ -4,5 +4,14 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATABASE_PATH = Path(os.getenv("OMNISTOCK_DATABASE", PROJECT_ROOT / "backend" / "omnistock.sqlite3"))
-SECRET_KEY = os.getenv("OMNISTOCK_SECRET_KEY", "change-this-secret-before-production")
+APPLICATION_ENVIRONMENT = os.getenv("OMNISTOCK_ENVIRONMENT", "development").lower()
+SECRET_KEY = os.getenv("OMNISTOCK_SECRET_KEY")
+if not SECRET_KEY:
+	raise RuntimeError("OMNISTOCK_SECRET_KEY es obligatoria; genera una clave aleatoria antes de iniciar la API")
 TOKEN_TTL_SECONDS = int(os.getenv("OMNISTOCK_TOKEN_TTL_SECONDS", "28800"))
+MAX_REQUEST_BYTES = 1 * 1024 * 1024
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 300
+LOGIN_LOCKOUT_SECONDS = 900
+ADMIN_EMAIL = os.getenv("OMNISTOCK_ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("OMNISTOCK_ADMIN_PASSWORD")

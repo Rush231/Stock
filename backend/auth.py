@@ -52,3 +52,16 @@ def require_authentication(route_function: RouteFunction) -> RouteFunction:
         return route_function(*args, **kwargs)
 
     return cast(RouteFunction, authenticated_route)
+
+
+def require_roles(*allowed_roles: str) -> Callable[[RouteFunction], RouteFunction]:
+    def role_decorator(route_function: RouteFunction) -> RouteFunction:
+        @wraps(route_function)
+        def authorized_route(*args: Any, **kwargs: Any) -> Any:
+            if getattr(g, "authenticated_user", {}).get("role") not in allowed_roles:
+                return jsonify({"error": "permisos insuficientes"}), 403
+            return route_function(*args, **kwargs)
+
+        return cast(RouteFunction, authorized_route)
+
+    return role_decorator

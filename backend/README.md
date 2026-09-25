@@ -13,6 +13,15 @@ python -m backend.app
 
 La API queda disponible en `http://localhost:5000`.
 
+Antes de iniciar, define un secreto y las credenciales iniciales fuera del código:
+
+```bash
+export OMNISTOCK_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export OMNISTOCK_ADMIN_EMAIL="admin@tuempresa.com"
+export OMNISTOCK_ADMIN_PASSWORD="cambia-esta-clave"
+python -m backend.app
+```
+
 ## Rutas
 
 - `GET /api/health`
@@ -23,6 +32,6 @@ La API queda disponible en `http://localhost:5000`.
 - `GET /api/branches` (Bearer token)
 - `GET /api/movements` (Bearer token)
 
-En el primer arranque se crea el usuario de desarrollo `admin@omnistock.local` con contraseña `admin123`. Define `OMNISTOCK_SECRET_KEY` y cambia esa contraseña antes de cualquier uso real.
+En el primer arranque se crea un usuario administrador únicamente cuando `OMNISTOCK_ADMIN_EMAIL` y `OMNISTOCK_ADMIN_PASSWORD` están definidas. No existen credenciales por defecto.
 
 La base SQLite se guarda en `backend/omnistock.sqlite3`; se puede cambiar con `OMNISTOCK_DATABASE`.
